@@ -1,3 +1,4 @@
+from multiprocessing import Pool
 from tablut import Tafl
 from random import choice, shuffle
 import numpy as np
@@ -28,7 +29,7 @@ class Node:
         self.id = uuid4()
         self.padre = padre
         self.tafl = estado or Tafl()
-        self.acciones_restantes = self.tafl.mask
+        self.acciones_restantes = self.tafl._mask()
         self.hijos = dict()
         self.visitas = 0
         self.wins = 0
@@ -36,6 +37,7 @@ class Node:
         self.value = self.tafl.winner
 
 
+    
     def expand_random(self):
         a = self.acciones_restantes.pop()
         node = Node(self.tafl.cl_step(a), self)
@@ -48,12 +50,6 @@ class Node:
             node = Node(self.tafl.cl_step(a), self)
             self.hijos[a] = node
             
-
-    def rollout_clean(self):
-        shuffle(self.acciones_restantes)
-        a = self.acciones_restantes[-1]
-        newTafl = self.tafl.in_step(a)
-        return Node(newTafl, None)
 
     def ucb(self, hijo):
         if hijo.visitas == 0:
@@ -72,14 +68,14 @@ class Node:
         return self.tafl.done
 
     def __repr__(self):
-        return f"Node<len_a_r: {len(self.acciones_restantes)} hijos:{len(self.hijos)}, visitas:{self.visitas}, wins: {self.wins}>"
+        return f"Node<a_resta: {len(self.acciones_restantes)} n_hijos:{len(self.hijos)}, visitas:{self.visitas}, wins: {self.wins}>"
 
 
 #Simulacion
-@timeit
+#@timeit
 def rollout(node : Node, tafl : Tafl):
     while not tafl.done:
-        tafl.in_step(choice(tafl.mask))
+        tafl = tafl.cl_step(choice(tafl.mask))
     
     return tafl.winner
 
@@ -141,7 +137,7 @@ def draw_tree(root, comment=''):
     
     def create_nodes(dot, nodo):
         dot.node(f'{nodo.visitas} {nodo.wins} {len(nodo.hijos)}', shape='box')
-        e()
+        
         for hijo in nodo.hijos.values():
             create_nodes(dot, hijo)
 

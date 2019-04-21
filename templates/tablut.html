@@ -1,32 +1,101 @@
 <head>
   <meta name="viewport" content="width=device-width, initial-scale=3, shrink-to-fit=no">
+  <script
+  src="https://code.jquery.com/jquery-3.4.0.min.js"
+  integrity="sha256-BJeo0qm959uMBGb65z40ejJYGSgR7REI4+CW1fNKwOg="
+  crossorigin="anonymous"></script>
+  <style>
+  .ficha {background-color: powderblue;}
+  .active {background-color: red;}
+</style>
 </head>
 <body>
 {% for row in tablero %}
+    {% set rowloop = loop%}
     {% for elem in row %}
-    {% if elem == 22 %}
-    <span class="" onClick=clic()> 🗼 </span>
-    {% endif %}
-    {% if elem == 0 %}
-    <span> 🗒 </span>
-    {% endif %}
-    {% if elem == 11 %}
-    <span> 🔫 </span>
-    {% endif %}
-    {% if elem == 44 %}
-    <span> 🎃 </span>
-    {% endif %}
-    {% if elem == 33 %}
-    <span> 👑 </span>
-    {% endif %}
+    <span class="ficha" id="{{rowloop.index0}}_{{loop.index0}}"> 
+      {% if elem == 22 %}
+      <span> 🗼 </span>
+      {% endif %}
+      {% if elem == 0 %}
+      <span> 🗒 </span>
+      {% endif %}
+      {% if elem == 11 %}
+      <span> 🔫 </span>
+      {% endif %}
+      {% if elem == 44 %}
+      <span> 🎃 </span>
+      {% endif %}
+      {% if elem == 33 %}
+      <span> 👑 </span>
+      {% endif %}
+      {% if elem == 55 %}
+      <span> 🗼 </span>
+      {% endif %}
+    </span>
+    
+    
     {% endfor %}
-    {% if elem == 55 %}
-    <span> 🗼 </span>
-    {% endif %}
     </br>
 {% endfor %}
+
+
+<script type="text/javascript">
+var moves = {};
+
+function get_moves() {
+  var moves_as_lists = {{moves}};
+  console.log(moves_as_lists);
+  for (var i=0, len=moves_as_lists.length; i < len; i++) {
+    move = moves_as_lists[i];
+    from_x = [move[0], move[1]];
+    to_x = [move[2], move[3]];
+    if (moves[from_x] == null) {
+      moves[from_x] = [to_x];
+      console.log(from_x);
+      console.log(to_x);
+      console.log('creando');
+    }
+    else {
+      moves[from_x].push(to_x);
+      }
+  }
+  console.log(moves);
+};
+  
+
+$(document).ready(() => get_moves());
+
+$('.ficha').click(function (event) {
+    event.preventDefault();
+    var id = this.id;
+    var split = id.split("_").map(x => parseInt(x, 10));
+    $(parsedId).toggleClass("active");
+    for (var i=0, len=moves[split].length; i < len; i++) {
+      var elem = moves[split][i];
+      var parsedId = '#' + Array.prototype.join.call(elem, '_');
+      console.log($(parsedId));
+      $(parsedId).toggleClass("active");
+      //if ($(parsedId).hasClass("active")) ;
+      //else {
+        
+      //}
+      
+    }
+  
+  $('.active').click(function (event) {
+    
+  })
+    
+});
+
+</script>
+
 <form action="/" method="post">
     <input type="submit" value="Jaja">
 </form>
-</body>
 
+
+
+
+</body>
