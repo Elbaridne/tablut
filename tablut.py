@@ -9,7 +9,7 @@ import json, base64
 
 NAME = "Tablut"
 SIZE = 9
-MAX_MOVES = 200
+MAX_MOVES = 100
 DIRECTIONS = {'down': (1,0), 'up': (-1,0), 'right': (0,1), 'left':(0,-1)}
 TEAM = {1:'Muscovites', -1:'Swedish', 0:'None'}
 
@@ -46,7 +46,7 @@ class Tafl:
         self.action_space = ACTION_SPACE; self.space_action = SPACE_ACTION
         self.turn = turn
         self.done = done or self.turn >= MAX_MOVES 
-        self.mask = self._valid_moves()
+        self.mask = self._mask()
         
     def __hash__(self):
         return hash(self.board.tostring()) + self.currentPlayer
@@ -85,8 +85,8 @@ class Tafl:
         self.currentPlayer = -self.currentPlayer
         self.turn += 1
         self.winner = winner
-        #self.legal_actions = self._valid_moves()
-        self.mask = self._valid_moves()
+        #self.legal_actions = self._mask()
+        self.mask = self._mask()
         self.done = is_done or len(self.mask) == 0
         # Another Talf object is created instead of updating the current one
         
@@ -191,7 +191,7 @@ class Tafl:
         return {k:v for k,v in moves.items() if v != []}
 
 
-    def _valid_moves(self):
+    def _mask(self):
         '''
             List of quadruples (x_f, y_f, x_t, y_t) to use as index of legal moves in 
             the action space.
@@ -315,8 +315,4 @@ class Tafl:
 
         return self.action_space[action]
         
- 
-    def _mask(self):    
-        '''List of index of legal actions'''  
-        return [self.action_encode(a) for a in self.legal_actions]        
-        
+

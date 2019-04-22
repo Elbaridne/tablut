@@ -1,4 +1,5 @@
 from multiprocessing import Pool
+from utils import timeit
 from tablut import Tafl
 from random import choice, shuffle
 import numpy as np
@@ -9,27 +10,12 @@ import time
 # {hash(state) : Node}
 states = dict()
 
-def timeit(method):
-    def timed(*args, **kw):
-        ts = time.time()
-        result = method(*args, **kw)
-        te = time.time()
-        if 'log_time' in kw:
-            name = kw.get('log_name', method.__name__.upper())
-            kw['log_time'][name] = int((te - ts) * 1000)
-        else:
-            print ('%r  %2.2f ms' % \
-                  (method.__name__, (te - ts) * 1000))
-        return result
-    return timed
-    
-
 class Node:
     def __init__(self, estado = None, padre = None):
         self.id = uuid4()
         self.padre = padre
         self.tafl = estado or Tafl()
-        self.acciones_restantes = self.tafl._mask()
+        self.acciones_restantes = self.tafl.mask
         self.hijos = dict()
         self.visitas = 0
         self.wins = 0
@@ -39,16 +25,21 @@ class Node:
 
     
     def expand_random(self):
-        a = self.acciones_restantes.pop()
-        node = Node(self.tafl.cl_step(a), self)
-        self.hijos[a] = node
-        return self.hijos[a], a
+        try:
+            a = self.acciones_restantes.pop()
+            node = Node(self.tafl.cl_step(a), self)
+            self.hijos[a] = node
+            return self.hijos[a], a
+        except Exception as e:
+            print('Why am I HERE')
 
+    #@timeit
     def expand_all(self):
         while len(self.acciones_restantes) > 0:
             a = self.acciones_restantes.pop()
             node = Node(self.tafl.cl_step(a), self)
             self.hijos[a] = node
+            yield
             
 
     def ucb(self, hijo):
@@ -56,7 +47,8 @@ class Node:
             return inf
         else:
             return (hijo.wins/hijo.visitas) + sqrt(2) * sqrt(log(self.visitas)/hijo.visitas)
-            
+    
+    #@timeit
     def max_ucb(self):
         assert len(self.hijos) != 0, "Los hijos no deberian de ser 0..."
         self.hijos.items()
@@ -73,10 +65,9 @@ class Node:
 
 #Simulacion
 #@timeit
-def rollout(node : Node, tafl : Tafl):
+def rollout(tafl : Tafl):
     while not tafl.done:
         tafl = tafl.cl_step(choice(tafl.mask))
-    
     return tafl.winner
 
 #@timeit  
@@ -97,19 +88,18 @@ def run_mcts(root, simulations):
     # Seleccion
     for _ in range(simulations):
         node = root
-        while len(node.hijos) > 0:
+        while len(node.hijos) > 0 and len(node.acciones_restantes)==0:
             _, node = node.max_ucb()
         _tafl_clone = node.tafl.clone()
             
         if node.visitas == 0:
-            ganador = rollout(node, _tafl_clone)
+            ganador = rollout(_tafl_clone)
             backpropagate(node, root.id, ganador, player)
 
         else:
-            node.expand_all()
-            primer_hijo = next(iter(node.hijos.values()))
-            ganador = rollout(primer_hijo, _tafl_clone)
-            backpropagate(primer_hijo, root.id, ganador, player)
+            h,_=node.expand_random()    
+            ganador = rollout(_tafl_clone)
+            backpropagate(h, root.id, ganador, player)
     
     a, _ = root.max_ucb()
     return a
