@@ -18,7 +18,7 @@ def tablut():
 
     moves = list(map(game.action_dec, game.mask))
     print(moves)
-    return render_template('tablut.html', tablero=game.state, moves=moves)
+    return render_template('tablut.html', tablero=game.board, moves=moves)
 
 @app.route("/<move>", methods=['POST'])
 def tablut2(move):
@@ -30,7 +30,7 @@ def tablut2(move):
             # El agente hace un mov aleatorio
             game.in_step(choice(game.mask))
             moves = list(map(game.action_dec, game.mask))
-            return render_template('tablut.html', tablero=game.state, moves=moves, jugador=game.currentPlayer)
+            return render_template('tablut.html', tablero=game.board, moves=moves, jugador=game.currentPlayer)
         else:
             pass
             #Movimiento inválido

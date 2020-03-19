@@ -172,9 +172,11 @@ public:
             return _collisions(piece, pieces);
         }
 
-
     }  
 
+    bool _check_move() {
+        
+    }
 
 };
 
