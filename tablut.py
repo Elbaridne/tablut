@@ -1,5 +1,6 @@
 # coding=utf-8
 from collections import namedtuple
+from dataclasses import dataclass
 
 from utils import rngx, rngy, timeit
 import numpy as np
@@ -36,6 +37,8 @@ ACTION_SPACE = {v: k for k, v in enumerate(action_spaces())}
 SPACE_ACTION = {k: v for k, v in enumerate(action_spaces())}
 Piece = namedtuple('Piece', ['x', 'y'])
 
+
+
 class Tafl:
     """Engine for the Hnefatafl nordic games"""
 
@@ -49,7 +52,7 @@ class Tafl:
         self.board = board if board is not None else self._new_board()
         self.currentPlayer = currentPlayer or 1
         self.winner = winner or 0
-        self.action_space = ACTION_SPACE;
+        self.action_space = ACTION_SPACE
         self.space_action = SPACE_ACTION
         self.turn = turn
         self.done = done or self.turn >= MAX_MOVES
@@ -183,9 +186,20 @@ class Tafl:
         else:
             piezas = chain(self._pieces(11), self._pieces(33))
 
-        moves = {pieza: self._available_moves(pieza) for pieza in piezas}
+        moves = {pieza: list(self._available_moves(pieza)) for pieza in piezas}
         # Remove pieces with no movements available
-        return {k: v for k, v in moves.items() if v != []}
+        return {k: v for k, v in moves.items() if len(v) > 0}
+
+    def matrix_moves(self):
+        x = self._all_moves_team()
+        moves_matrices = list()
+        for k, v in x.items():
+            arr = np.zeros((SIZE, SIZE))
+            arr[k] = -1
+            for m in v:
+                arr[m] = 1
+            moves_matrices.append(arr)
+        return np.array(moves_matrices)
 
     def _mask(self) -> list:
         """
