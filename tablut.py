@@ -5,6 +5,8 @@ from dataclasses import dataclass
 from utils import rngx, rngy, timeit
 import numpy as np
 from itertools import takewhile, chain, cycle
+from functools import reduce
+from hashlib import md5
 from pprint import pprint as _print
 from random import choice
 from copy import deepcopy
@@ -60,12 +62,12 @@ class Tafl:
         self.argmask = self._argmask()
 
     def __hash__(self):
-        return hash(self.board.tostring()) + self.currentPlayer
+        hash = self.hashlist()
+        return hash * self.currentPlayer
 
     def hashlist(self):
-        for elem in map(lambda board: hash(board.tostring()) + self.currentPlayer,
-                        [np.rot90(board, e) for board in (self.board, self.board.T) for e in range(4)]):
-            yield elem
+        x = reduce(lambda f, s: f*s, [int(md5(np.ascontiguousarray(np.rot90(self.board, i))).hexdigest(), 16) for i in range(4)])
+        return x
 
     def __repr__(self):
         return f'''We are playing {NAME}\nCurrent player is {TEAM[self.currentPlayer]}, Turn: {self.turn}\nFinished: {self.done}, Winner: {TEAM[self.winner]}\n {self.board}'''
@@ -369,3 +371,4 @@ class Tafl2:
         board[(4, 4)] = 33
 
         return board
+

@@ -73,8 +73,4 @@ def predict(env: Tafl, nn: Model):
     return value, outp
 
 
-def train(nn : Model,
-          replay_history : List[Replay]):
-    pass
-
 

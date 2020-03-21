@@ -1,9 +1,12 @@
 import unittest
 from tablut import Tafl
-from tree import Node, run_mcts
+from az_mcts import MCTS
+from model import gen_model
+from nn_input import NNInputs
 from utils import timeit
 from time import time
 from random import choice
+from training import TrainNeuralNet
 
 def retry(n_times):
     def function(function):
@@ -35,31 +38,35 @@ class TestTafl(unittest.TestCase):
         while not game.done:
             game.in_step(choice(game.mask))
         return time() - before
+
     
-    
-    def test_run_100_simulations(self):
+    def test_prediction(self):
         game = Tafl()
-        a = Node(game)
-        run_mcts(a, 100)
-        print(a)
-        
-    def test_run_200_simulations(self):
+        neuralnet = gen_model()
+        mcts = MCTS(neuralnet)
+        mcts.perform_search(game)
+
+
+    def test_actionprob(self):
         game = Tafl()
-        a = Node(game)
-        run_mcts(a, 200)
-
-    def test_run_1000_simulations(self):
-        game = Tafl()
-        a = Node(game)
-        run_mcts(a, 1000)
-    
-    def test_run_rollout(self):
-        game = Tafl()
-        a = Node(game)
+        neuralnet = gen_model()
+        mcts = MCTS(neuralnet)
+        mcts.action_probability(game)
 
 
+    def test_episode(self):
+        neuralnet = gen_model()
+        train = TrainNeuralNet(neuralnet)
+        output = train.episode()
+        for out in output:
+            for e in out[1]:
+                if e > 0:
+                    print(e)
 
-
+    def test_train(self):
+        neuralnet = gen_model()
+        train = TrainNeuralNet(neuralnet)
+        train.train()
 
 if __name__ == '__main__':
     unittest.main()
