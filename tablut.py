@@ -57,6 +57,7 @@ class Tafl:
         self.turn = turn
         self.done = done or self.turn >= MAX_MOVES
         self.mask = self._mask()
+        self.argmask = self._argmask()
 
     def __hash__(self):
         return hash(self.board.tostring()) + self.currentPlayer
@@ -203,9 +204,7 @@ class Tafl:
 
     def _mask(self) -> list:
         """
-            List of quadruples (x_f, y_f, x_t, y_t) to use as index of legal moves in
-            the action space.
-            returns: (0,0,0,1) ... (8,8,8,7)
+            Returns the move mask of all available pieces
         """
 
         move_dict = self._all_moves_team()
@@ -215,6 +214,15 @@ class Tafl:
         # print([(p, move) for p, m in move_dict.items() for move in m])
         valid_moves = [self.action_enc(*p, *move) for p, m in move_dict.items() for move in m]
         return valid_moves
+
+    def _argmask(self):
+        move_dict = self._all_moves_team()
+        mask = np.zeros((len(ACTION_SPACE)))
+        for p, m in move_dict.items():
+            for move in m:
+                mask[self.action_enc(*p, *move)] = 1
+        return mask
+
 
     def _check_move(self, from_p, to_p) -> np.array:
         """
