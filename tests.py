@@ -41,6 +41,7 @@ class TestTafl(unittest.TestCase):
         game = Tafl()
         a = Node(game)
         run_mcts(a, 100)
+        print(a)
         
     def test_run_200_simulations(self):
         game = Tafl()

@@ -3,7 +3,7 @@ from itertools import chain
 
 import numpy as np
 
-from tablut import Tafl, SIZE
+from tablut import Tafl, SIZE, ACTION_SPACE
 from typing import *
 
 
@@ -33,6 +33,11 @@ class NNInputs:
            out[x,y] = 1
         return out
 
+    @staticmethod
+    def apply_mask(tafl: Tafl, arr: Union[list, chain]) -> np.array:
+        actions = np.array(tafl.mask)
+        mask = np.ones((1, 1296))
+        return np.where(actions in mask, mask, 0)
 
     def pad_moves(self):
         conc_n = 16 - self.moves.shape[0]

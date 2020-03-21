@@ -64,13 +64,13 @@ class Node:
 
 
 #Simulacion
-@timeit
+
 def rollout(tafl : Tafl):
     while not tafl.done:
         tafl = tafl.cl_step(choice(tafl.mask))
     return tafl.winner
 
-@timeit  
+
 def backpropagate(node : Node, root_id, ganador, player):
     while node.padre != None:
         node.visitas += 1
@@ -80,7 +80,7 @@ def backpropagate(node : Node, root_id, ganador, player):
     node.wins += 1 if ganador == player else 0
     node.wins -= 1 if ganador == -player else 0
 
-@timeit
+
 def run_mcts(root, simulations):
     player = root.tafl.currentPlayer
     
