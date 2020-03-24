@@ -19,6 +19,19 @@ MAX_MOVES = 100
 DIRECTIONS = {'down': (1, 0), 'up': (-1, 0), 'right': (0, 1), 'left': (0, -1)}
 TEAM = {1: 'Muscovites', -1: 'Swedish', 0: 'None'}
 
+# https://stevenloria.com/lazy-properties/
+def lazy_property(fn):
+    '''Decorator that makes a property lazy-evaluated.
+    '''
+    attr_name = '_lazy_' + fn.__name__
+
+    @property
+    def _lazy_property(self):
+        if not hasattr(self, attr_name):
+            setattr(self, attr_name, fn(self))
+        return getattr(self, attr_name)
+    return _lazy_property
+
 
 def action_spaces():
     """Returns all possible actions in the board as a pair of positions
@@ -58,8 +71,14 @@ class Tafl:
         self.space_action = SPACE_ACTION
         self.turn = turn
         self.done = done or self.turn >= MAX_MOVES
-        self.mask = self._mask()
-        self.argmask = self._argmask()
+
+    @lazy_property
+    def mask(self):
+        return self._mask()
+
+    @lazy_property
+    def argmask(self):
+        return self._argmask()
 
     def __hash__(self):
         hash = self.hashlist()
@@ -90,16 +109,14 @@ class Tafl:
 
     def in_step(self, index_action):
         from_p, to_p = self.action_decode(index_action)
-        # Returns the updated board
-        newboard, is_done, winner = self._check_move(from_p, to_p)
-        self.board = newboard
+        self.board, self.done, self.winner = self._check_move(from_p, to_p)
         self.currentPlayer = -self.currentPlayer
         self.turn += 1
-        self.winner = winner
-        # self.legal_actions = self._mask()
-        self.mask = self._mask()
-        self.done = is_done or len(self.mask) == 0
-        # Another Talf object is created instead of updating the current one
+        del self.mask
+        del self.argmask
+        if self.turn >= MAX_MOVES:
+            self.done = True
+        return True
 
     def cl_step(self, index_action):
         from_p, to_p = self.action_decode(index_action)
