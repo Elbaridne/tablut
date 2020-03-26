@@ -10,6 +10,8 @@ from random import choice
 import numpy as np
 from nn_input import NNInputs
 from collections import deque, namedtuple
+import pickle, os
+import datetime
 
 Replay = namedtuple('Replay', ['env', 'p', 'a'])
 
@@ -26,6 +28,11 @@ class Supervisor:
 
     def save(self):
         save_weights(self.model, self.weights_path)
+
+    def train(self, epochs):
+        for i in range(epochs):
+            self.train_helper.train_gen(True)
+
 
 
 class Agent():
@@ -47,6 +54,7 @@ class Agent():
 
     def inference(self, temp):
         policy = self.mcts.action_probability(self.state, temp)
+        print(policy, 'polisi')
         action = np.argmax(policy)
         # print(np.argmax(policy))
         #trainExamples.append([env, policy, env.currentPlayer, None])
@@ -61,107 +69,86 @@ class Arena(Sequence):
     def __init__(self, env : Tafl,
                  p1: Agent,
                  p2: Optional[Agent],
-                 num_matches, batch_size,
-                 temp_threshold = 30):
+                 batch_size, steps = 100,
+                 temp_threshold = 30, replay = False):
         self.p1 = p1
         self.p2 = p2 if p2 is not None else p1
         self.batch_size = batch_size
-        self.num_matches = num_matches
         self.env = env
         self.temp_threshold = temp_threshold
-
+        self.replay_history = list()
+        self.replay = replay
 
     def __len__(self):
-        return self.num_matches // self.batch_size
+        return 100
+
+    def play(self):
+        self.env = Tafl.reset()
+        env = self.env
+        print(env)
+        history: List[Replay] = list()
+        temp = 1
+        self.p1.set_state(env)
+        self.p2.set_state(env)
+
+        while True:
+            print('A new turn')
+            if env.turn > self.temp_threshold:
+                temp = 0
+            if env.currentPlayer == self.p1.side:
+                curr = self.p1
+            else:
+                curr = self.p2
+
+            if curr.bot:
+                print(curr.state)
+                p, a = curr.inference(temp)
+                history.append(Replay(env, p, a))
+                curr.act(a)
+            else:
+                raise NotImplementedError
+
+            if env.done:
+                for step in history:
+                    self.replay_history.append(
+                        (NNInputs.from_Tafl(step.env).to_neural_input(), [np.array(step.env.currentPlayer * env.winner), np.array(step.p).reshape(1296)]))
+                return env.winner
 
     def __getitem__(self, idx):
-        #if tengo suficientes training examples para devolver en el batch
-        #       los devuelvo desde cache
-        #else:
-        # juego X partidas y genero datos
+        if self.replay:
+            for repl in os.listdir('replays/'):
+                with open('replays/'+repl, 'rb') as f:
+                    history = pickle.load(f)
+                    self.replay_history.extend(history)
+        else:
+            while len(self.replay_history) < self.batch_size:
+                self.play()
+        training_examples = self.replay_history[0:self.batch_size]
+        if not self.replay:
+            with open(f'replays/Tafl-t{self.env.turn}-{self.batch_size}-{datetime.datetime.now().strftime("%d_%m %H_%M_%S")}.pkl', 'wb') as f:
+                pickle.dump(training_examples, f)
 
-        env = self.env
-        output: List[Tuple[int, List[Replay]]] = list() ## TODO Hacer concurrent stack :P
-        ## TODO Paralelizar este bloque :D
-        for _ in range(self.batch_size):
-            env.reset()
-            history: List[Replay] = list()
-            temp = 1
-            self.p1.set_state(env)
-            self.p2.set_state(env)
-
-            while True:
-                if env.turn > self.temp_threshold:
-                    temp = 0
-                if env.currentPlayer == self.p1.side:
-                    curr = self.p1
-                else:
-                    curr = self.p2
-
-                if curr.bot:
-                    p, a= curr.inference(temp)
-                    history.append(Replay(env, p, a))
-                    curr.act()
-                else:
-                    raise NotImplementedError
-
-                if env.done:
-                    output.append((env.winner, history))
-                    break
-            pass
-
-        x = list()
-        y = list()
-
-        for gameReplay in output:
-            winner = gameReplay[0]
-            replayData = gameReplay[1]
-            for turn in replayData:
-                x.append(NNInputs.from_Tafl(turn.env).to_neural_input())
-                y.append([turn.env.currentPlayer * turn.winner, np.array(turn.p).reshape((1, 1296))])
-
-
+        del self.replay_history[0:self.batch_size]
+        x = np.array([example[0] for example in training_examples])
+        v = list(example[1][0] for example in training_examples)
+        p = list(example[1][1] for example in training_examples)
+        y = [np.array(v).reshape(self.batch_size, 1), np.array(p).reshape(self.batch_size, 1296)]
         return x, y
 
 class TrainNeuralNet:
     def __init__(self, net: Model):
         self.net = net
-        self.mcts = MCTS(net)
+        self.mcts = MCTS(net, num_sim=2)
         self.env = Tafl()
         self.trainExamples = []
 
-    def episode(self):
-        trainExamples = []
-        temp = 1
-        env = self.env
-        env.reset()
-        step = 0
-        while True:
-            step += 1
-            if step > 50:
-                temp = 0
+    def train_gen(self, replay = False, batch_size = 32):
+        ag1 = Agent(self.env, 0, True, self.net)
+        ar = Arena(self.env, ag1, None, batch_size, replay=replay)
+        self.net.fit(ar)
 
-            policy = self.mcts.action_probability(env, temp)
-            # print(np.argmax(policy))
-            action = np.argmax(policy)
-            trainExamples.append([env, policy, env.currentPlayer, None])
-            env = env.cl_step(action)
-            if env.done:
-                return [(st, po, pl, pl * env.winner) for st, po, pl, re in trainExamples]
-
-    def train_gen(self):
-        pass
-
-    def train(self):
-        print('Ejecutando episodio')
-        trainExamples = self.episode()
-        print('Numero de ejemplos ', len(trainExamples))
-        self.net.fit
-        for state, policy, player, reward in trainExamples:
-            print('Fitting...')
-            y = []
-            y.append(np.array(reward).reshape((1, 1)))
-            y.append(np.array(policy).reshape((1, 1296)))
-
-            self.net.fit(x=NNInputs.from_Tafl(state).to_neural_input(),
-                         y=y)
+if __name__ == '__main__':
+    model = gen_model()
+    supervisor = Supervisor('checkpoint.h5')
+    supervisor.train(1)
+    supervisor.save()

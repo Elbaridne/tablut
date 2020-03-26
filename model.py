@@ -44,7 +44,7 @@ def policy_head(model):
 
 
 def gen_model() -> Model:
-    input = Input(batch_shape=(1, 21, 9, 9))
+    input = Input(batch_shape=(None, 23, 9, 9))
     common = convolutional_layer(input)
     common = residual_layer(common)
     common = residual_layer(common)

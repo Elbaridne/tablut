@@ -56,7 +56,7 @@ Piece = namedtuple('Piece', ['x', 'y'])
 
 class Tafl:
     """Engine for the Hnefatafl nordic games"""
-
+    CASTLES = [(0, 0), (0, SIZE - 1), (SIZE - 1, 0), (SIZE - 1, SIZE - 1)]
     def __init__(self, board=None, currentPlayer=None, winner=None, done=None, turn=0, fromjson=None):
         if fromjson:
             fromjson = json.loads(fromjson)
@@ -72,11 +72,11 @@ class Tafl:
         self.turn = turn
         self.done = done or self.turn >= MAX_MOVES
 
-    @lazy_property
+    @property
     def mask(self):
         return self._mask()
 
-    @lazy_property
+    @property
     def argmask(self):
         return self._argmask()
 
@@ -91,8 +91,9 @@ class Tafl:
     def __repr__(self):
         return f'''We are playing {NAME}\nCurrent player is {TEAM[self.currentPlayer]}, Turn: {self.turn}\nFinished: {self.done}, Winner: {TEAM[self.winner]}\n {self.board}'''
 
-    def reset(self):
-        self = Tafl()
+    @staticmethod
+    def reset():
+        return Tafl()
 
     def json(self):
         tojson = {
@@ -112,8 +113,6 @@ class Tafl:
         self.board, self.done, self.winner = self._check_move(from_p, to_p)
         self.currentPlayer = -self.currentPlayer
         self.turn += 1
-        del self.mask
-        del self.argmask
         if self.turn >= MAX_MOVES:
             self.done = True
         return True
@@ -225,14 +224,27 @@ class Tafl:
         """
             Returns the move mask of all available pieces
         """
-
         move_dict = self._all_moves_team()
-        # valid_moves = list()
-        # for piece, moves in move_dict.items():
-        #     valid_moves.extend(map(lambda move: (*piece, *move), moves))
-        # print([(p, move) for p, m in move_dict.items() for move in m])
         valid_moves = [self.action_enc(*p, *move) for p, m in move_dict.items() for move in m]
         return valid_moves
+
+    def _rotate_mask_90(self):
+        for piece, moves in self._all_moves_team().items():
+            for move in moves:
+                x = np.zeros((9,9))
+                x[piece] = -1
+                x[move] = 3
+                x = np.rot90(x)
+                i = np.where(x == -1)
+                f = np.where(x == 3)
+                print(piece, move, i, f)
+
+
+
+    def _raichi_tuichi(self) -> int:
+        """0 - No winning moves, 1/2 winning moves"""
+        pos_rey = tuple(*self._pieces((33,)))
+        return sum(1 for coll in self._collisions(pos_rey, (0, 22)) if coll in self.CASTLES)
 
     def _argmask(self):
         move_dict = self._all_moves_team()
@@ -331,22 +343,25 @@ class Tafl:
         return directions
 
     # Actions
-
-    def action_decode(self, index):
+    @staticmethod
+    def action_decode(index) -> Tuple:
         """Index to action tuple"""
-        x1, y1, x2, y2 = self.space_action[index]
+        x1, y1, x2, y2 = SPACE_ACTION[index]
         return (x1, y1), (x2, y2)
 
-    def action_dec(self, index):
-        return list(self.space_action[index])
+    @staticmethod
+    def action_dec(index):
+        return list(SPACE_ACTION[index])
 
-    def action_enc(self, x1, y1, x2, y2):
-        return self.action_space[(x1, y1, x2, y2)]
+    @staticmethod
+    def action_enc(x1, y1, x2, y2):
+        return ACTION_SPACE[(x1, y1, x2, y2)]
 
-    def action_encode(self, action):
+    @staticmethod
+    def action_encode(action):
         """Single action index"""
 
-        return self.action_space[action]
+        return ACTION_SPACE[action]
 
 
 class Tafl2:
