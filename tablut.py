@@ -6,7 +6,7 @@ from utils import rngx, rngy, timeit
 import numpy as np
 from itertools import takewhile, chain, cycle
 from functools import reduce
-from hashlib import md5
+from hashlib import sha1
 from pprint import pprint as _print
 from random import choice
 from copy import deepcopy
@@ -72,6 +72,7 @@ class Tafl:
         self.turn = turn
         self.done = done or self.turn >= MAX_MOVES
 
+
     @property
     def mask(self):
         return self._mask()
@@ -81,12 +82,16 @@ class Tafl:
         return self._argmask()
 
     def __hash__(self):
-        hash = self.hashlist()
-        return hash * self.currentPlayer
+        return int(sha1(self.board).hexdigest(), 16) + self.currentPlayer
 
-    def hashlist(self):
-        x = reduce(lambda f, s: f*s, [int(md5(np.ascontiguousarray(np.rot90(self.board, i))).hexdigest(), 16) for i in range(4)])
-        return x
+    def __str__(self):
+        out = '\ A  B  C  D  E  F  G  H  I\n'
+        for idx, x in enumerate(self.board):
+            out += str(idx) + ' '
+            for y in x:
+                out += str(y).zfill(2) + ' ' if y != 0 else '   '
+            out += "|\n"
+        return out
 
     def __repr__(self):
         return f'''We are playing {NAME}\nCurrent player is {TEAM[self.currentPlayer]}, Turn: {self.turn}\nFinished: {self.done}, Winner: {TEAM[self.winner]}\n {self.board}'''
@@ -122,7 +127,7 @@ class Tafl:
         # Returns the updated board
         newboard, is_done, winner = self._check_move(from_p, to_p)
         # Another Talf object is created instead of updating the current one
-        return Tafl(newboard, -self.currentPlayer, winner, is_done, self.turn + 1)
+        return Tafl(newboard, -self.currentPlayer, winner, is_done, self.turn + 1,)
 
     def clone(self):
         return Tafl(self.board, self.currentPlayer, self.winner, self.done, self.turn)
@@ -283,7 +288,6 @@ class Tafl:
             # To apply capture logic we need to check surrounding squares at distance 1 and 2
             dis1, dis2 = self._proximity(copyboard, to_p, 1), self._proximity(copyboard, to_p, 2)
             captured = self._infiltrate(copyboard, piece, dis1, dis2)
-
             # Remove captured pieces from the board
             if captured is not None:
                 for capped in captured:
@@ -304,9 +308,9 @@ class Tafl:
         """
         out = list()
         for direction, square in dis1.items():
-            if square != piece and square not in (0, 22, 44):
+            if square != piece and square not in (0, 22, 55):
                 # If a surrounding piece is an enemy, check piece behind it
-                if dis2.get(direction, None) in (piece, 22, 44, None):
+                if dis2.get(direction, None) in (piece, 22, 55, None):
                     if square == 33 and piece == 11:
                         continue
                     if square == 33:
@@ -363,44 +367,4 @@ class Tafl:
 
         return ACTION_SPACE[action]
 
-
-class Tafl2:
-    def __init__(self):
-        # Estructuras
-        # Moscovitas
-        # Suecos
-        # Rey
-        # Moves
-        pass
-
-    def _new_board(self):
-
-        """
-        Return a NxN numpy matrix, representation of the game board
-        with the tablut pieces in right place.
-        22 - Castle, 44 - Muscovites, 11 - Swedish, 33 - King 0 - Free Space
-        """
-        # TODO Use size to get other Half configurations
-        muscov = [(0, 3), (0, 4), (0, 5), (1, 4)]
-        swedish = [(2, 4), (3, 4)]
-        castle = [[0, 0], [0, SIZE - 1], [SIZE - 1, 0], [SIZE - 1, SIZE - 1]]
-
-        board = np.zeros((SIZE, SIZE), dtype=np.uint8)
-
-        # Placing the castles at the corners
-        for sx, sy in castle:
-            board[sx, sy] = 22
-
-            # Swedish and Muscovites
-        for _ in range(4):
-            for mosco in muscov:
-                board[mosco] = 44
-            for sueco in swedish:
-                board[sueco] = 11
-            board = np.rot90(board)
-
-        # King
-        board[(4, 4)] = 33
-
-        return board
 

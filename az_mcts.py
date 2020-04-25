@@ -4,8 +4,10 @@ from nn_input import NNInputs
 from math import *
 from typing import *
 import numpy as np
+import random
 
 CPUT = 0.5
+
 
 class MCTS:
     """ Lógica del Árbol de Busqueda Monte Carlo
@@ -13,17 +15,22 @@ class MCTS:
     """
     S: Dict[int, Tafl]
 
-    def __init__(self, net: Model, num_sim= 10):
+    def __init__(self, net: Model,
+                 num_sim=None,
+                 c_puct=5):
         self.net = net
+        if num_sim is None:
+            num_sim = 30
+        print('Num sim ', num_sim)
         self.num_sim = num_sim
         self.S = dict()
         self.Qsa = dict()
         self.visits_state = self.Vs = {}
         self.nn_policy_per_state = self.Ps = {}
         self.visits_action_state = self.Sa = {}
+        self.cput = c_puct
 
     def action_probability(self, state: Tafl, temp=1):
-        print('Performing rollout')
         for _ in range(self.num_sim):
             self.perform_search(state)
         state_hash = hash(state)
@@ -34,13 +41,13 @@ class MCTS:
             probs = np.zeros((len(state.argmask)))
             probs[bestA] = 1
             return probs
-
+        print(counts)
         counts = np.array([x**(1./temp) for x in counts])
+        print(counts)
         counts = counts / counts.sum()
         return counts
 
     def perform_search(self, state: Tafl):
-        print('Performing Search')
         state_hash = hash(state)
 
         if state_hash not in self.S:
@@ -63,25 +70,27 @@ class MCTS:
                     if e > 0:
                         print(e)
 
-            self.visits_state[state_hash] = 0
+            self.visits_state[state_hash] = 1
             return -val
 
         cur_best = -float('inf')
         best_act = -1
         actions = self.Ps[state_hash]
-
-        for a in range(len(state.argmask)):
-            if actions[a] > 0:
-                if (state_hash, a) in self.Qsa:
-                    u = self.Qsa[(state_hash,a)] + \
-                        CPUT * actions[a] * \
-                        sqrt(self.visits_state[state_hash])/(1+self.visits_action_state[(state_hash, a)])
-                else:
-                    u = CPUT * actions[a] * \
-                        sqrt(self.visits_state[state_hash] + 1e-8)
-                if u > cur_best:
-                    cur_best = u
-                    best_act = a
+        # if random.random() > 0.7 and state.turn < 60:
+        #     best_act = random.choice(np.nonzero(actions)[0])
+        #     print('Random time!!!')
+        #else:
+        for a in np.nonzero(actions)[0]:
+            if (state_hash, a) in self.Qsa:
+                u = self.Qsa[(state_hash,a)] + \
+                    CPUT * actions[a] * \
+                    sqrt(self.visits_state[state_hash])/(1+self.visits_action_state[(state_hash, a)])
+            else:
+                u = CPUT * actions[a] * \
+                    sqrt(self.visits_state[state_hash] + 1e-8)
+            if u > cur_best:
+                cur_best = u
+                best_act = a
 
 
         next_state = state.cl_step(best_act)

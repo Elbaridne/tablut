@@ -78,7 +78,7 @@ class NNInputs:
         rot = np.zeros(shape=(1296,))
         for x in np.nonzero(mask)[0]:
             act = SPACE_ACTION[x]
-            i, f = NNInputs.rotate_move(*act)
+            i, f = NNInputs.rotate90_move(*act)
             rot[Tafl.action_enc(*i, *f)] = 1
         return rot
 
@@ -87,7 +87,7 @@ class NNInputs:
         pass
 
     @staticmethod
-    def rotate_move(xi,yi,xf,yf):
+    def rotate90_move(xi, yi, xf, yf):
         return (SIZE - 1 - yi, xi),(SIZE - 1 - yf, xf)
 
     @staticmethod
