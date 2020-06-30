@@ -1,101 +1,94 @@
-<head>
-  <meta name="viewport" content="width=device-width, initial-scale=3, shrink-to-fit=no">
-  <script
-  src="https://code.jquery.com/jquery-3.4.0.min.js"
-  integrity="sha256-BJeo0qm959uMBGb65z40ejJYGSgR7REI4+CW1fNKwOg="
-  crossorigin="anonymous"></script>
+
+
+<html>
+  <head>
+      <script src="scrollreveal.js"></script>
+      <script>
+          ScrollReveal({ reset: true });
+      </script>
+      <script src="socket.io.js" integrity="sha256-yr4fRk/GU1ehYJPAs8P4JlTgu0Hdsp4ZKrx8bDEDC3I="></script>
+  </head>
   <style>
-  .ficha {background-color: powderblue;}
-  .active {background-color: red;}
-</style>
-</head>
-<body>
-{% for row in tablero %}
-    {% set rowloop = loop%}
-    {% for elem in row %}
-    <span class="ficha" id="{{rowloop.index0}}_{{loop.index0}}"> 
-      {% if elem == 22 %}
-      <span> 🗼 </span>
-      {% endif %}
-      {% if elem == 0 %}
-      <span> 🗒 </span>
-      {% endif %}
-      {% if elem == 11 %}
-      <span> 🔫 </span>
-      {% endif %}
-      {% if elem == 44 %}
-      <span> 🎃 </span>
-      {% endif %}
-      {% if elem == 33 %}
-      <span> 👑 </span>
-      {% endif %}
-      {% if elem == 55 %}
-      <span> 🗼 </span>
-      {% endif %}
-    </span>
-    
-    
-    {% endfor %}
-    </br>
-{% endfor %}
+                  body {
+              background: #e8e9e5;
+              padding: 20px;
+          }
 
+          *{
+              -webkit-transition: ease-in 2s;
+              -moz-transition: ease-in 2s;
+              -o-transition: ease-out 2s;
+              -ms-transition: ease-out 2s;
+              transition: ease-out 2s;
+          }
 
-<script type="text/javascript">
-var moves = {};
+          table {
+              margin: 0 auto;
+              border-collapse: collapse;
+              /* background:#d1b8ab; */
+              border: solid 2px gray;
+              border-style: inset;
+              transform-style: preserve-3d;
+              -webkit-transition:  linear 1s;
+              -moz-transition: ease-out 1s;
+              -o-transition: ease-in-out 1s;
+              -ms-transition: ease-in-out 1s;
+              transition: ease 2s;
+          }
+          td {
+              border-left:none;
+              border-bottom:none;
+              -webkit-box-sizing:border-box;
+              -moz-box-sizing:border-box;
+              -o-box-sizing:border-box;
+              box-sizing:border-box; 
+              transition: background-color .2s;
+              
+              ;
 
-function get_moves() {
-  var moves_as_lists = {{moves}};
-  console.log(moves_as_lists);
-  for (var i=0, len=moves_as_lists.length; i < len; i++) {
-    move = moves_as_lists[i];
-    from_x = [move[0], move[1]];
-    to_x = [move[2], move[3]];
-    if (moves[from_x] == null) {
-      moves[from_x] = [to_x];
-      console.log(from_x);
-      console.log(to_x);
-      console.log('creando');
-    }
-    else {
-      moves[from_x].push(to_x);
-      }
-  }
-  console.log(moves);
-};
-  
+          }
+          
+          .selected {
+                  
+          }
 
-$(document).ready(() => get_moves());
+          .destination {
+              background-color: green !important;
+          }
 
-$('.ficha').click(function (event) {
-    event.preventDefault();
-    var id = this.id;
-    var split = id.split("_").map(x => parseInt(x, 10));
-    $(parsedId).toggleClass("active");
-    for (var i=0, len=moves[split].length; i < len; i++) {
-      var elem = moves[split][i];
-      var parsedId = '#' + Array.prototype.join.call(elem, '_');
-      console.log($(parsedId));
-      $(parsedId).toggleClass("active");
-      //if ($(parsedId).hasClass("active")) ;
-      //else {
-        
-      //}
-      
-    }
-  
-  $('.active').click(function (event) {
-    
-  })
-    
-});
+          .ficha {
+              transition: opacity .1s;
+              width: 40px; height: 40px;
+          }
 
-</script>
+          tr:nth-child(odd) td:nth-child(even), tr:nth-child(even) td:nth-child(odd) {
+              background: #dfdfdf;
+              border: 1px solid black;
+              border-style: inset;
+          }
 
-<form action="/" method="post">
-    <input type="submit" value="Jaja">
-</form>
+          tr:nth-child(even) td:nth-child(odd), tr:nth-child(odd) td:nth-child(even) {
+              background: #dfdfdf;
+              border: 1px solid whitesmoke;
+              border-style: inset;
+          }
 
+          .ficha {
+              align-items: center;
+              text-align: center;;
+          }
+          
+  </style>
+  <body>
+      <h1>TablutAI</h1>
+      <table id='gameBoard'>
+   
+      </table>
+      <div>
+          Me toca!
+      </div>
+      <button onclick="alternar()">Alternar</button>
+  </body>
 
-
-
-</body>
+      <script type="text/javascript" charset="utf-8" src="boardlogic.js"></script>
+</html>
