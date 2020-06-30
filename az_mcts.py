@@ -1,6 +1,6 @@
 from tablut import Tafl
 from tensorflow.keras import Model
-from nn_input import NNInputs
+from nn_input import NNInputs, NNInputsSmall
 from math import *
 from typing import *
 import numpy as np
@@ -57,7 +57,7 @@ class MCTS:
             return -self.S[state_hash].winner
 
         if state_hash not in self.Ps:
-            nn_input = NNInputs.from_Tafl(state)
+            nn_input = NNInputsSmall.from_Tafl(state)
             prediction = self.net.predict(nn_input.to_neural_input(add_axis=True))
             val, policy = NNInputs.parse_prediction(state, prediction)
             self.Ps[state_hash] = policy

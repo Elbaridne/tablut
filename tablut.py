@@ -15,7 +15,7 @@ import json, base64
 
 NAME = "Tablut"
 SIZE = 9
-MAX_MOVES = 100
+MAX_MOVES = 300
 DIRECTIONS = {'down': (1, 0), 'up': (-1, 0), 'right': (0, 1), 'left': (0, -1)}
 TEAM = {1: 'Muscovites', -1: 'Swedish', 0: 'None'}
 
@@ -57,7 +57,7 @@ Piece = namedtuple('Piece', ['x', 'y'])
 class Tafl:
     """Engine for the Hnefatafl nordic games"""
     CASTLES = [(0, 0), (0, SIZE - 1), (SIZE - 1, 0), (SIZE - 1, SIZE - 1)]
-    def __init__(self, board=None, currentPlayer=None, winner=None, done=None, turn=0, fromjson=None):
+    def __init__(self, board=None, currentPlayer=None, winner=None, done=None, turn=0, fromjson=None, max_moves=MAX_MOVES):
         if fromjson:
             fromjson = json.loads(fromjson)
             board = np.array(fromjson['outstr'])
@@ -70,7 +70,8 @@ class Tafl:
         self.action_space = ACTION_SPACE
         self.space_action = SPACE_ACTION
         self.turn = turn
-        self.done = done or self.turn >= MAX_MOVES
+        self.max_moves = max_moves
+        self.done = done or self.turn >= self.max_moves
 
 
     @property
@@ -85,7 +86,7 @@ class Tafl:
         return int(sha1(self.board).hexdigest(), 16) + self.currentPlayer
 
     def __str__(self):
-        out = '\ A  B  C  D  E  F  G  H  I\n'
+        out = '- A0 B1 C2 D3 E4 F5 G6 H7 I8 |\n'
         for idx, x in enumerate(self.board):
             out += str(idx) + ' '
             for y in x:
@@ -118,7 +119,7 @@ class Tafl:
         self.board, self.done, self.winner = self._check_move(from_p, to_p)
         self.currentPlayer = -self.currentPlayer
         self.turn += 1
-        if self.turn >= MAX_MOVES:
+        if self.turn >= self.max_moves:
             self.done = True
         return True
 

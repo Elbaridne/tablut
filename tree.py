@@ -1,9 +1,9 @@
 from multiprocessing import Pool
 from utils import timeit
-from tablut import Tafl
+from tablut import Tafl, TEAM
 from random import choice, shuffle
 import numpy as np
-from graphviz import Digraph
+
 from math import log, sqrt, inf
 from uuid import uuid4
 import time
@@ -22,7 +22,11 @@ class Node:
         self.turn = self.tafl.turn
         self.value = self.tafl.winner
 
-
+    def go_to_child(self, a):
+        hijo = self.hijos[a]
+        del self.hijos
+        del self
+        return hijo
     
     def expand_random(self):
         try:
@@ -39,20 +43,23 @@ class Node:
             a = self.acciones_restantes.pop()
             node = Node(self.tafl.cl_step(a), self)
             self.hijos[a] = node
-            yield
+
             
 
-    def ucb(self, hijo):
+    def ucb(self, hijo, temp):
         if hijo.visitas == 0:
             return inf
         else:
-            return (hijo.wins/hijo.visitas) + sqrt(2) * sqrt(log(self.visitas)/hijo.visitas)
+            if temp is None:
+                return (hijo.wins/hijo.visitas) + sqrt(2) * sqrt(log(self.visitas)/hijo.visitas)
+            else:
+                return (hijo.wins / hijo.visitas) + temp * sqrt(log(self.visitas) / hijo.visitas)
     
     #@timeit
-    def max_ucb(self):
+    def max_ucb(self, temp=None):
         assert len(self.hijos) != 0, "Los hijos no deberian de ser 0..."
         self.hijos.items()
-        a, hijo = max(self.hijos.items(), key= lambda pair_a_hijo: self.ucb(pair_a_hijo[1]))
+        a, hijo = max(self.hijos.items(), key= lambda pair_a_hijo: self.ucb(pair_a_hijo[1], temp))
         return a, hijo
 
 
@@ -71,38 +78,50 @@ def rollout(tafl : Tafl):
     return tafl.winner
 
 
-def backpropagate(node : Node, root_id, ganador, player):
+def backpropagate(node : Node, ganador):
     while node.padre != None:
         node.visitas += 1
-        node.wins += 1 if ganador == player else 0
+        if ganador != 0:
+            if ganador == node.tafl.currentPlayer:
+                node.wins += 1
+            else:
+                node.wins -= 1
+
         node = node.padre
+        ganador = -ganador
+
+    # Llegamos al Padre
     node.visitas += 1
-    node.wins += 1 if ganador == player else 0
-    node.wins -= 1 if ganador == -player else 0
+    if ganador != 0:
+        if ganador == node.tafl.currentPlayer:
+            node.wins += 1
+        else:
+            node.wins -= 1
 
 
-def run_mcts(root, simulations):
+
+def run_mcts(root, simulations, temp=None):
     player = root.tafl.currentPlayer
     
    
     # Seleccion
     for _ in range(simulations):
         node = root
-        while len(node.hijos) > 0 and len(node.acciones_restantes)==0:
-            _, node = node.max_ucb()
-        _tafl_clone = node.tafl.clone()
-            
-        if node.visitas == 0:
-            ganador = rollout(_tafl_clone)
-            backpropagate(node, root.id, ganador, player)
+        while node.visitas != 0:
+            node.expand_all()
+            _, node = node.max_ucb(temp)
 
-        else:
-            h,_=node.expand_random()    
-            ganador = rollout(_tafl_clone)
-            backpropagate(h, root.id, ganador, player)
+        _tafl_clone = node.tafl.clone()
+        w = rollout(_tafl_clone)
+        backpropagate(node, w)
+            
+
     
     a, _ = root.max_ucb()
-    return a
+    print(F"Veo {root.wins} WINS en el futuro del jugador {TEAM[player]}")
+    p = root.go_to_child(a)
+
+    return a, p
 
 
 def play():
@@ -112,31 +131,13 @@ def play():
             a = run_mcts(node , 50)
         else: 
             a = choice(node.tafl._mask())
-        
+        node.tafl.in_step(a)
         print(node.tafl)
+
 
     #Jugador Aleatorio
     #Jugador MCTS
 
 
-
-
-def draw_tree(root, comment=''):
-    dot = Digraph(comment=comment)
-    
-    def create_nodes(dot, nodo):
-        dot.node(f'{nodo.visitas} {nodo.wins} {len(nodo.hijos)}', shape='box')
-        
-        for hijo in nodo.hijos.values():
-            create_nodes(dot, hijo)
-
-        try:
-            for hijo in nodo.hijos.values():
-                dot.edge(f'{nodo.id}', f'{hijo.id}')
-        except Exception as e:
-            pass
-
-
-
-    create_nodes(dot, root)
-    dot.render(f'test-output/nvm.gv', view=True)
+if __name__ == '__main__':
+    play()

@@ -6,6 +6,60 @@ import numpy as np
 from tablut import Tafl, SIZE, ACTION_SPACE, SPACE_ACTION
 from typing import *
 
+@dataclass
+class NNInputsSmall:
+    king: np.array((SIZE, SIZE))
+    structures: np.array((SIZE, SIZE))
+    muscovite: np.array((SIZE, SIZE))
+    swedish: np.array((SIZE, SIZE))
+    player: int
+
+    @staticmethod
+    def from_Tafl(tafl: Tafl):
+        return NNInputsSmall(
+            NNInputs.pieces_to_arr(tafl._pieces((33,))),
+            NNInputs.pieces_to_arr(chain(tafl._pieces((22,)), tafl._pieces((55,)))),
+            NNInputs.pieces_to_arr(tafl._pieces((44,))),
+            NNInputs.pieces_to_arr(tafl._pieces((11,))),
+            tafl.currentPlayer)
+
+    def to_neural_input(self, add_axis=False):
+
+        if self.player == 1:
+            arr_player = np.ones((SIZE, SIZE))
+        else:
+            arr_player = np.zeros((SIZE, SIZE))
+
+        # output shape -> (1, 5, 9, 9)
+        arr = np.array([self.king,
+                        self.structures,
+                        self.muscovite,
+                        self.swedish,
+                        arr_player])
+
+        if add_axis:
+            return arr[np.newaxis, ]
+        return arr
+
+    def rot90(self):
+        return NNInputsSmall(
+            np.rot90(self.king),
+            np.rot90(self.structures),
+            np.rot90(self.swedish),
+            np.rot90(self.muscovite),
+            self.player,
+        )
+
+    @staticmethod
+    def rot90_mask(mask: np.array) -> np.array:
+        # Asumimos que se pasa argmask
+        rot = np.zeros(shape=(1296,))
+        for x in np.nonzero(mask)[0]:
+            act = SPACE_ACTION[x]
+            i, f = NNInputs.rotate90_move(*act)
+            rot[Tafl.action_enc(*i, *f)] = 1
+        return rot
+
 
 @dataclass
 class NNInputs:

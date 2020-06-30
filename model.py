@@ -93,7 +93,27 @@ def gen_model() -> Model:
                   optimizer='adam')
     return model
 
+def gen_model_small() -> Model:
+    input = Input(batch_shape=(None, 5, 9, 9))
+    common = convolutional_layer(input, num_filters=512, kernel_size=(3, 3))
+    vhead = value_head(common)
+    phead = policy_head(common)
+    losses = {'Policy_Output': 'categorical_crossentropy',
+              'Value_Output': 'mean_squared_error'}
+
+    loss_weights = {
+        'Policy_Output': 1,
+        'Value_Output': 1
+    }
+
+    model = Model(inputs=input, outputs=[vhead, phead])
+    model.compile(loss=losses, loss_weights=loss_weights,
+                  optimizer='adam')
+    return model
+
+
 VERSIONS={
     1: gen_model,
-    2: gen_model_V2
+    2: gen_model_V2,
+    3: gen_model_small
 }
