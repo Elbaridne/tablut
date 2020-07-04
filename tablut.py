@@ -72,11 +72,9 @@ class Tafl:
         self.turn = turn
         self.max_moves = max_moves
         self.done = done or self.turn >= self.max_moves
+        self.mask = self._mask()
 
 
-    @property
-    def mask(self):
-        return self._mask()
 
     @property
     def argmask(self):
@@ -116,7 +114,10 @@ class Tafl:
 
     def in_step(self, index_action):
         from_p, to_p = self.action_decode(index_action)
+        if self.space_action.get((*from_p, *to_p), None) is None:
+            print('IN QUE PASA? ', index_action, from_p, to_p, (*from_p, *to_p), self.action_enc(*from_p, *to_p))
         self.board, self.done, self.winner = self._check_move(from_p, to_p)
+        self.mask = self._mask()
         self.currentPlayer = -self.currentPlayer
         self.turn += 1
         if self.turn >= self.max_moves:
@@ -125,8 +126,11 @@ class Tafl:
 
     def cl_step(self, index_action):
         from_p, to_p = self.action_decode(index_action)
+        if self.action_space.get((*from_p, *to_p), None) is None:
+            print('CLONE QUE PASA? ', index_action, from_p, to_p, (*from_p, *to_p), self.action_decode(index_action), self.action_enc())
         # Returns the updated board
         newboard, is_done, winner = self._check_move(from_p, to_p)
+        self.mask = self._mask()
         # Another Talf object is created instead of updating the current one
         return Tafl(newboard, -self.currentPlayer, winner, is_done, self.turn + 1,)
 
@@ -230,9 +234,12 @@ class Tafl:
         """
             Returns the move mask of all available pieces
         """
-        move_dict = self._all_moves_team()
-        valid_moves = [self.action_enc(*p, *move) for p, m in move_dict.items() for move in m]
-        return valid_moves
+        if not self.done:
+            move_dict = self._all_moves_team()
+            valid_moves = [self.action_enc(*p, *move) for p, m in move_dict.items() for move in m]
+            return valid_moves
+        else:
+            return []
 
     def _rotate_mask_90(self):
         for piece, moves in self._all_moves_team().items():
@@ -367,5 +374,7 @@ class Tafl:
         """Single action index"""
 
         return ACTION_SPACE[action]
+
+
 
 
