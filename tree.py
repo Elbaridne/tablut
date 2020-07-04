@@ -1,4 +1,6 @@
 from multiprocessing import Pool
+from typing import Dict
+
 from utils import timeit
 from tablut import Tafl, TEAM
 from random import choice, shuffle
@@ -11,14 +13,14 @@ import time
 states = dict()
 
 class Node:
-    def __init__(self, estado = None, padre = None):
+    def __init__(self, estado=None):
         self.id = uuid4()
-        self.padre = padre
         self.tafl = estado or Tafl()
         self.acciones_restantes = self.tafl.mask
-        self.hijos = dict()
+        self.hijos:Dict[str, Node] = dict()
         self.visitas = 0
         self.wins = 0
+        self.loses = 0
         self.turn = self.tafl.turn
         self.value = self.tafl.winner
 
@@ -31,6 +33,9 @@ class Node:
     def expand_random(self):
         try:
             a = self.acciones_restantes.pop()
+            # Hashear Hijo
+            # Incluir hijo en States
+            # y referenciar la accion con el hash
             node = Node(self.tafl.cl_step(a), self)
             self.hijos[a] = node
             return self.hijos[a], a
@@ -40,6 +45,9 @@ class Node:
     #@timeit
     def expand_all(self):
         while len(self.acciones_restantes) > 0:
+            # Hashear Hijo
+            # Incluir hijo en States
+            # y referenciar la accion con el hash
             a = self.acciones_restantes.pop()
             node = Node(self.tafl.cl_step(a), self)
             self.hijos[a] = node
@@ -74,29 +82,9 @@ class Node:
 
 def rollout(tafl : Tafl):
     while not tafl.done:
-        tafl = tafl.cl_step(choice(tafl.mask))
+        tafl = tafl.cl_step(choice(tafl._mask()))
     return tafl.winner
 
-
-def backpropagate(node : Node, ganador):
-    while node.padre != None:
-        node.visitas += 1
-        if ganador != 0:
-            if ganador == node.tafl.currentPlayer:
-                node.wins += 1
-            else:
-                node.wins -= 1
-
-        node = node.padre
-        ganador = -ganador
-
-    # Llegamos al Padre
-    node.visitas += 1
-    if ganador != 0:
-        if ganador == node.tafl.currentPlayer:
-            node.wins += 1
-        else:
-            node.wins -= 1
 
 
 
@@ -107,18 +95,30 @@ def run_mcts(root, simulations, temp=None):
     # Seleccion
     for _ in range(simulations):
         node = root
+        trip = [node]
+
         while node.visitas != 0:
             node.expand_all()
             _, node = node.max_ucb(temp)
+            trip.append(node)
 
         _tafl_clone = node.tafl.clone()
         w = rollout(_tafl_clone)
-        backpropagate(node, w)
+
+        for rnode in reversed(trip):
+            rnode.visitas += 1
+            if rnode.tafl.winner == w:
+                rnode.wins += 1
+            else:
+                rnode.loses += 1
+            w = -w
+
             
 
     
     a, _ = root.max_ucb()
     print(F"Veo {root.wins} WINS en el futuro del jugador {TEAM[player]}")
+    print(root.tafl)
     p = root.go_to_child(a)
 
     return a, p

@@ -13,6 +13,9 @@ def timeit(method):
         return result
     return timed
 
+def zobrist_hash():
+    pass
+
 # Range utils
 rngx_v1 = lambda x,y,lim,st: ((x, y, _x, y) for _x in range(x, lim, st) if x != _x)
 rngy_v1 = lambda x,y,lim,st: ((x, y, x, _y) for _y in range(y, lim, st) if y != _y)

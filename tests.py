@@ -40,21 +40,21 @@ class TestTafl(unittest.TestCase):
         return time() - before
 
     
-    def test_prediction(self):
+    def _test_prediction(self):
         game = Tafl()
         neuralnet = gen_model()
         mcts = MCTS(neuralnet)
         mcts.perform_search(game)
 
 
-    def test_actionprob(self):
+    def _test_actionprob(self):
         game = Tafl()
         neuralnet = gen_model()
         mcts = MCTS(neuralnet)
         mcts.action_probability(game)
 
 
-    def test_episode(self):
+    def _test_episode(self):
         neuralnet = gen_model()
         train = TrainNeuralNet(neuralnet)
         output = train.episode()
@@ -63,7 +63,7 @@ class TestTafl(unittest.TestCase):
                 if e > 0:
                     print(e)
 
-    def test_train(self):
+    def _test_train(self):
         neuralnet = gen_model()
         train = TrainNeuralNet(neuralnet)
         train.train()

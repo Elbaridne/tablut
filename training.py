@@ -91,8 +91,7 @@ class AgentMCTS(Agent):
     def inference(self, temp):
         self.node.tafl = self.state
         action, p = run_mcts(self.node, self.num_sims, temp)
-        self.node = p
-        return None, action
+        return p, action
 
 
 
@@ -128,7 +127,6 @@ class Arena(Sequence):
     def play(self):
         self.env = Tafl.reset()
         env = self.env
-        print(env)
         history: List[Replay] = list()
         temp = 1
         self.p1.set_state(env)
@@ -136,7 +134,8 @@ class Arena(Sequence):
 
         while True:
             print('A new turn')
-            print('Le toca a los ', TEAM[env.currentPlayer])
+            print('Le toca a los ', TEAM[env.currentPlayer], '... tablero... --')
+            print('')
             if env.turn > self.temp_threshold:
                 temp = 0
             if env.currentPlayer == self.p1.side:
@@ -150,6 +149,7 @@ class Arena(Sequence):
                 history.append(Replay(env, p, a))
                 print(SPACE_ACTION[a])
                 curr.act(a)
+                print('Despues de accion de ',  TEAM[env.currentPlayer], curr.state)
             else:
                 raise NotImplementedError
 
