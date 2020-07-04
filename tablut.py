@@ -2,7 +2,7 @@
 from collections import namedtuple
 from dataclasses import dataclass
 
-from utils import rngx, rngy, timeit
+from utils import rngx, rngy, timeit, rngx_v1, rngy_v1
 import numpy as np
 from itertools import takewhile, chain, cycle
 from functools import reduce
@@ -47,9 +47,27 @@ def action_spaces():
             all_actions.extend(map(lambda x: (i, j, *x), ch))
     return all_actions
 
+def actionv2():
+    actions = list()
+    for i in range(SIZE):
+        for j in range(SIZE):
+            if (i, j) in ((SIZE, SIZE), (0, 0), (SIZE, 0), (0, SIZE)):
+                continue
+            else:
+                ac =list(chain(
+                    list(rngx_v1(i, j, -1, -1))[::-1],
+                    rngx_v1(i, j, SIZE, 1),
+                    list(rngy_v1(i, j, -1, -1))[::-1],
+                    rngy_v1(i, j, SIZE, 1)
+                    ))
+                actions.extend(ac)
 
-ACTION_SPACE = {v: k for k, v in enumerate(action_spaces())}
-SPACE_ACTION = {k: v for k, v in enumerate(action_spaces())}
+    return actions
+
+
+
+ACTION_SPACE = {v: k for k, v in enumerate(actionv2())}
+SPACE_ACTION = {k: v for k, v in enumerate(actionv2())}
 Piece = namedtuple('Piece', ['x', 'y'])
 
 
@@ -107,7 +125,8 @@ class Tafl:
                 't': self.turn,
                 'd': self.done,
                 'w': self.winner
-            }
+            },
+            'moves': [(e, self.space_action[e]) for e in self.mask]
         }
         print(tojson['outstr'])
         return json.dumps(tojson)

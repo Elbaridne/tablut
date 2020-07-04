@@ -14,5 +14,8 @@ def timeit(method):
     return timed
 
 # Range utils
+rngx_v1 = lambda x,y,lim,st: ((x, y, _x, y) for _x in range(x, lim, st) if x != _x)
+rngy_v1 = lambda x,y,lim,st: ((x, y, x, _y) for _y in range(y, lim, st) if y != _y)
+
 rngx = lambda x,y,lim,st: ((_x, y) for _x in range(x, lim, st))
 rngy = lambda x,y,lim,st: ((x, _y) for _y in range(y, lim, st))

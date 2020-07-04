@@ -1,0 +1,94 @@
+
+
+<html>
+  <head>
+      <script src="scrollreveal.js"></script>
+      <script>
+          ScrollReveal({ reset: true });
+      </script>
+      <script src="socket.io.js" integrity="sha256-yr4fRk/GU1ehYJPAs8P4JlTgu0Hdsp4ZKrx8bDEDC3I="></script>
+  </head>
+  <style>
+                  body {
+              background: #e8e9e5;
+              padding: 20px;
+          }
+
+          *{
+              -webkit-transition: ease-in 2s;
+              -moz-transition: ease-in 2s;
+              -o-transition: ease-out 2s;
+              -ms-transition: ease-out 2s;
+              transition: ease-out 2s;
+          }
+
+          table {
+              margin: 0 auto;
+              border-collapse: collapse;
+              /* background:#d1b8ab; */
+              border: solid 2px gray;
+              border-style: inset;
+              transform-style: preserve-3d;
+              -webkit-transition:  linear 1s;
+              -moz-transition: ease-out 1s;
+              -o-transition: ease-in-out 1s;
+              -ms-transition: ease-in-out 1s;
+              transition: ease 2s;
+          }
+          td {
+              border-left:none;
+              border-bottom:none;
+              -webkit-box-sizing:border-box;
+              -moz-box-sizing:border-box;
+              -o-box-sizing:border-box;
+              box-sizing:border-box; 
+              transition: background-color .2s;
+              
+              ;
+
+          }
+          
+          .selected {
+                  
+          }
+
+          .destination {
+              background-color: green !important;
+          }
+
+          .ficha {
+              transition: opacity .1s;
+              width: 40px; height: 40px;
+          }
+
+          tr:nth-child(odd) td:nth-child(even), tr:nth-child(even) td:nth-child(odd) {
+              background: #dfdfdf;
+              border: 1px solid black;
+              border-style: inset;
+          }
+
+          tr:nth-child(even) td:nth-child(odd), tr:nth-child(odd) td:nth-child(even) {
+              background: #dfdfdf;
+              border: 1px solid whitesmoke;
+              border-style: inset;
+          }
+
+          .ficha {
+              align-items: center;
+              text-align: center;;
+          }
+          
+  </style>
+  <body>
+      <h1>TablutAI</h1>
+      <table id='gameBoard'>
+   
+      </table>
+      <div>
+          Me toca!
+      </div>
+      <button onclick="alternar()">Alternar</button>
+  </body>
+
+      <script type="text/javascript" charset="utf-8" src="boardlogic.js"></script>
+</html>
